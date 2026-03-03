@@ -5,7 +5,7 @@ export function formatTranscriptLine(
   text: string,
   timestamp: Date
 ): string {
-  return `${speaker} ${timestamp.toLocaleTimeString()} ${text}`
+  return `${speaker} ${timestamp.toLocaleTimeString()}\n${text}`
 }
 
 export function computeTextDelta(
