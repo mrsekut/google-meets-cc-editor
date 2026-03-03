@@ -6,6 +6,7 @@ import type { CaptionData } from "~core/selectors"
 import { useAutoCC } from "~hooks/useAutoCC"
 import { useCaptionObserver } from "~hooks/useCaptionObserver"
 import { useDraggable } from "~hooks/useDraggable"
+import type { Corner } from "~hooks/useResizable"
 import { useResizable } from "~hooks/useResizable"
 
 import { InterimDisplay } from "./InterimDisplay"
@@ -24,7 +25,7 @@ export function CaptionPanel() {
     setPosition
   )
   const { isResizing, handleMouseDown: handleResizeMouseDown } =
-    useResizable(setSize)
+    useResizable(setSize, setPosition)
 
   useEffect(() => {
     setPosition({
@@ -142,18 +143,25 @@ export function CaptionPanel() {
           <InterimDisplay interimText={interimText} />
         </div>
 
-        <div
-          onMouseDown={handleResizeMouseDown}
-          style={{
-            position: "absolute",
-            right: 0,
-            bottom: 0,
-            width: 16,
-            height: 16,
-            cursor: "nwse-resize",
-            borderRadius: "0 0 12px 0"
-          }}
-        />
+        {(
+          [
+            ["top-left", { top: 0, left: 0, cursor: "nwse-resize" }],
+            ["top-right", { top: 0, right: 0, cursor: "nesw-resize" }],
+            ["bottom-left", { bottom: 0, left: 0, cursor: "nesw-resize" }],
+            ["bottom-right", { bottom: 0, right: 0, cursor: "nwse-resize" }]
+          ] as const
+        ).map(([corner, pos]) => (
+          <div
+            key={corner}
+            onMouseDown={handleResizeMouseDown(corner as Corner)}
+            style={{
+              position: "absolute",
+              width: 16,
+              height: 16,
+              ...pos
+            }}
+          />
+        ))}
       </div>
     </>
   )
