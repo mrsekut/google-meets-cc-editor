@@ -25,10 +25,7 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
-    ],
-    "permissions": [
-      "tabs"
+      "https://meet.google.com/*"
     ]
   }
 }
