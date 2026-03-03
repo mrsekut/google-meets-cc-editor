@@ -13,15 +13,14 @@ export function InterimDisplay({ interimText }: Props) {
     <div
       style={{
         flexShrink: 0,
-        borderTop: "1px dashed #ccc",
+        borderTop: "1px solid rgba(255, 255, 255, 0.06)",
         padding: "6px 12px",
-        background: "#fafafa",
-        color: "#888",
+        color: "rgba(255, 255, 255, 0.4)",
         fontSize: 12,
         fontStyle: "italic",
         lineHeight: 1.5
       }}>
-      <span style={{ color: "#aaa", marginRight: 6 }}>
+      <span style={{ color: "rgba(255, 255, 255, 0.25)", marginRight: 6 }}>
         {interimText.speaker}
       </span>
       {interimText.text}

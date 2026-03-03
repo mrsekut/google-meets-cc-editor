@@ -45,18 +45,21 @@ export function CaptionPanel() {
             right: 20,
             bottom: 20,
             zIndex: 999999,
-            background: "#1a73e8",
-            color: "white",
+            background: "rgba(32, 33, 36, 0.75)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            color: "rgba(255, 255, 255, 0.9)",
             borderRadius: "50%",
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-            fontSize: 20,
-            fontWeight: "bold"
+            boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
+            fontSize: 13,
+            fontWeight: 500,
+            letterSpacing: "0.5px"
           }}
           onClick={() => setIsMinimized(false)}
           title="字幕パネルを開く">
@@ -72,9 +75,12 @@ export function CaptionPanel() {
           width: size.width,
           height: size.height,
           zIndex: 999999,
-          background: "white",
-          borderRadius: 8,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+          background: "rgba(32, 33, 36, 0.78)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderRadius: 12,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
           display: isMinimized ? "none" : "flex",
           flexDirection: "column",
           fontFamily: "system-ui, sans-serif",
@@ -84,27 +90,33 @@ export function CaptionPanel() {
         }}>
         <div
           style={{
-            padding: "6px 12px",
-            background: "#1a73e8",
-            color: "white",
+            padding: "8px 12px",
             cursor: isDragging ? "grabbing" : "grab",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            flexShrink: 0
+            flexShrink: 0,
+            borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
           }}
           onMouseDown={handleDragMouseDown}>
-          <span style={{ fontWeight: "bold", fontSize: 12 }}>
-            Google Meets CC
+          <span
+            style={{
+              fontWeight: 500,
+              fontSize: 11,
+              color: "rgba(255, 255, 255, 0.5)",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase"
+            }}>
+            CC
           </span>
           <button
             onClick={() => setIsMinimized(true)}
             style={{
               background: "none",
               border: "none",
-              color: "white",
+              color: "rgba(255, 255, 255, 0.4)",
               cursor: "pointer",
-              fontSize: 16,
+              fontSize: 14,
               padding: 0,
               lineHeight: 1
             }}
@@ -136,12 +148,10 @@ export function CaptionPanel() {
             position: "absolute",
             right: 0,
             bottom: 0,
-            width: 20,
-            height: 20,
+            width: 16,
+            height: 16,
             cursor: "nwse-resize",
-            background:
-              "linear-gradient(135deg, transparent 40%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.15) 50%, transparent 50%, transparent 60%, rgba(0,0,0,0.15) 60%, rgba(0,0,0,0.15) 70%, transparent 70%)",
-            borderRadius: "0 0 8px 0"
+            borderRadius: "0 0 12px 0"
           }}
         />
       </div>

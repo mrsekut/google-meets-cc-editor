@@ -17,7 +17,7 @@ export const TranscriptArea = forwardRef<HTMLDivElement, Props>(
               position: "absolute",
               top: 8,
               left: 12,
-              color: "#999",
+              color: "rgba(255, 255, 255, 0.3)",
               pointerEvents: "none",
               whiteSpace: "pre-wrap",
               fontSize: 13,
@@ -40,7 +40,7 @@ export const TranscriptArea = forwardRef<HTMLDivElement, Props>(
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
             lineHeight: 1.6,
-            color: "#333",
+            color: "rgba(255, 255, 255, 0.88)",
             fontSize: 13
           }}
         />
