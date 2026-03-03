@@ -34,6 +34,19 @@ export function CaptionPanel() {
     })
   }, [])
 
+  // ウィンドウリサイズ時にパネルをビューポート内に収める
+  useEffect(() => {
+    const handleWindowResize = () => {
+      setPosition((prev) => ({
+        x: Math.min(prev.x, window.innerWidth - 80),
+        y: Math.min(prev.y, window.innerHeight - 40)
+      }))
+    }
+
+    window.addEventListener("resize", handleWindowResize)
+    return () => window.removeEventListener("resize", handleWindowResize)
+  }, [])
+
   useAutoCC()
   useCaptionObserver(transcriptRef, setHasContent, setInterimText)
 
