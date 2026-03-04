@@ -3,13 +3,13 @@
 import type { Dispatch, RefObject, SetStateAction } from "react"
 import { useEffect } from "react"
 
-import { computeTextDelta, formatTranscriptLine } from "~core/format"
-import type { CaptionData } from "~core/selectors"
+import { computeTextDelta, formatTranscriptLine } from "~features/format"
+import type { CaptionData } from "~features/selectors"
 import {
   extractCaptionData,
   findCaptionRegion,
   SELECTORS
-} from "~core/selectors"
+} from "~features/selectors"
 
 const FINALIZE_DELAY_MS = 2500
 

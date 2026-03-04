@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react"
 
-import type { CaptionData } from "~core/selectors"
-import { useAutoCC } from "~hooks/useAutoCC"
-import { useCaptionObserver } from "~hooks/useCaptionObserver"
-import { useDraggable } from "~hooks/useDraggable"
-import type { ResizeHandle } from "~hooks/useResizable"
-import { useResizable } from "~hooks/useResizable"
+import { useAutoCC } from "~features/autoStartCC/useAutoCC"
+import { useDraggable } from "~features/panel/useDraggable"
+import type { ResizeHandle } from "~features/panel/useResizable"
+import { useResizable } from "~features/panel/useResizable"
+import type { CaptionData } from "~features/selectors"
+import { useCaptionObserver } from "~features/useCaptionObserver"
 
 import { InterimDisplay } from "./InterimDisplay"
 import { TranscriptArea } from "./TranscriptArea"
@@ -24,8 +24,10 @@ export function CaptionPanel() {
     position,
     setPosition
   )
-  const { isResizing, handleMouseDown: handleResizeMouseDown } =
-    useResizable(setSize, setPosition)
+  const { isResizing, handleMouseDown: handleResizeMouseDown } = useResizable(
+    setSize,
+    setPosition
+  )
 
   useEffect(() => {
     setPosition({
@@ -158,14 +160,50 @@ export function CaptionPanel() {
 
         {(
           [
-            ["top-left", { top: 0, left: 0, width: 16, height: 16, cursor: "nwse-resize" }],
-            ["top-right", { top: 0, right: 0, width: 16, height: 16, cursor: "nesw-resize" }],
-            ["bottom-left", { bottom: 0, left: 0, width: 16, height: 16, cursor: "nesw-resize" }],
-            ["bottom-right", { bottom: 0, right: 0, width: 16, height: 16, cursor: "nwse-resize" }],
-            ["top", { top: 0, left: 16, right: 16, height: 6, cursor: "ns-resize" }],
-            ["bottom", { bottom: 0, left: 16, right: 16, height: 6, cursor: "ns-resize" }],
-            ["left", { left: 0, top: 16, bottom: 16, width: 6, cursor: "ew-resize" }],
-            ["right", { right: 0, top: 16, bottom: 16, width: 6, cursor: "ew-resize" }]
+            [
+              "top-left",
+              { top: 0, left: 0, width: 16, height: 16, cursor: "nwse-resize" }
+            ],
+            [
+              "top-right",
+              { top: 0, right: 0, width: 16, height: 16, cursor: "nesw-resize" }
+            ],
+            [
+              "bottom-left",
+              {
+                bottom: 0,
+                left: 0,
+                width: 16,
+                height: 16,
+                cursor: "nesw-resize"
+              }
+            ],
+            [
+              "bottom-right",
+              {
+                bottom: 0,
+                right: 0,
+                width: 16,
+                height: 16,
+                cursor: "nwse-resize"
+              }
+            ],
+            [
+              "top",
+              { top: 0, left: 16, right: 16, height: 6, cursor: "ns-resize" }
+            ],
+            [
+              "bottom",
+              { bottom: 0, left: 16, right: 16, height: 6, cursor: "ns-resize" }
+            ],
+            [
+              "left",
+              { left: 0, top: 16, bottom: 16, width: 6, cursor: "ew-resize" }
+            ],
+            [
+              "right",
+              { right: 0, top: 16, bottom: 16, width: 6, cursor: "ew-resize" }
+            ]
           ] as const
         ).map(([handle, style]) => (
           <div

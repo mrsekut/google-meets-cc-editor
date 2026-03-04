@@ -2,7 +2,7 @@
 
 import type { PlasmoCSConfig, PlasmoGetOverlayAnchor } from "plasmo"
 
-import { CaptionPanel } from "~components/CaptionPanel"
+import { CaptionPanel } from "~features/CaptionPanel"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://meet.google.com/*"],

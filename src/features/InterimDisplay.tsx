@@ -1,6 +1,6 @@
 // Displays the current unfinalized caption text with speaker name.
 
-import type { CaptionData } from "~core/selectors"
+import type { CaptionData } from "~features/selectors"
 
 type Props = {
   interimText: CaptionData | null

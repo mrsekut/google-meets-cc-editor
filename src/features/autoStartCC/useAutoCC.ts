@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 
-import { findCaptionRegion, findCCButton } from "~core/selectors"
+import { findCaptionRegion } from "~features/selectors"
 
 const AUTO_CC_POLL_MS = 2000
 
@@ -43,4 +43,15 @@ export function useAutoCC() {
       if (state.pollTimer != null) clearTimeout(state.pollTimer)
     }
   }, [])
+}
+
+function findCCButton(): HTMLElement | null {
+  for (const selector of [
+    'button[aria-label*="字幕をオン"]',
+    'button[aria-label*="Turn on captions"]'
+  ]) {
+    const btn = document.querySelector(selector)
+    if (btn) return btn as HTMLElement
+  }
+  return null
 }

@@ -22,17 +22,6 @@ export function findCaptionRegion(): Element | null {
   )
 }
 
-export function findCCButton(): HTMLElement | null {
-  for (const selector of [
-    'button[aria-label*="字幕をオン"]',
-    'button[aria-label*="Turn on captions"]'
-  ]) {
-    const btn = document.querySelector(selector)
-    if (btn) return btn as HTMLElement
-  }
-  return null
-}
-
 export function extractCaptionData(block: Element): CaptionData | null {
   const speakerEl = block.querySelector(SELECTORS.speakerName)
   const textEl = block.querySelector(SELECTORS.captionText)
