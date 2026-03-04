@@ -70,8 +70,10 @@ export function useCaptionObserver(
           return id
         })()
 
-      // 即座にinterim表示を更新（パネル下部にリアルタイム表示）
-      setInterimText({ speaker, text })
+      // 即座にinterim表示を更新（確定済み部分を除いた未確定テキストのみ表示）
+      const lastText = finalizedSegments.get(segId)
+      const interimText = (lastText && computeTextDelta(lastText, text)) ?? text
+      setInterimText({ speaker, text: interimText })
 
       // デバウンス: 前回のタイマーをキャンセルして再セット
       const existingTimer = activeTimers.get(segId)
@@ -84,7 +86,7 @@ export function useCaptionObserver(
 
         // interim表示をクリア（ただし別の発話で上書きされていたら残す）
         setInterimText((prev) => {
-          if (prev?.speaker === speaker && prev?.text === text) return null
+          if (prev?.speaker === speaker) return null
           return prev
         })
 

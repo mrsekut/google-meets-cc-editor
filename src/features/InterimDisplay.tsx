@@ -7,23 +7,30 @@ type Props = {
 }
 
 export function InterimDisplay({ interimText }: Props) {
-  if (!interimText) return null
-
   return (
     <div
       style={{
-        flexShrink: 0,
+        height: "6em",
+        display: "grid",
+        gridTemplateRows: "1fr 2fr",
         borderTop: "1px solid rgba(255, 255, 255, 0.06)",
         padding: "6px 12px",
-        color: "rgba(255, 255, 255, 0.4)",
         fontSize: 12,
         fontStyle: "italic",
         lineHeight: 1.5
       }}>
-      <span style={{ color: "rgba(255, 255, 255, 0.25)", marginRight: 6 }}>
-        {interimText.speaker}
-      </span>
-      {interimText.text}
+      <div style={{ color: "rgba(255, 255, 255, 0.25)" }}>
+        {interimText?.speaker}
+      </div>
+      <div style={{ overflow: "hidden" }}>
+        <div
+          style={{
+            minHeight: "100%",
+            color: "rgba(255, 255, 255, 0.4)"
+          }}>
+          {interimText?.text}
+        </div>
+      </div>
     </div>
   )
 }
