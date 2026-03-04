@@ -10,7 +10,7 @@
 import type { Dispatch, RefObject, SetStateAction } from "react"
 import { useEffect } from "react"
 
-import { computeTextDelta, formatTranscriptLine } from "~features/format"
+import { computeTextDelta } from "~features/format"
 import type { CaptionData } from "~features/selectors"
 import {
   extractCaptionData,
@@ -115,12 +115,42 @@ export function useCaptionObserver(
 // --- DOM書き込み ---
 
 function appendToTranscript(el: HTMLDivElement, speaker: string, text: string) {
-  const line = formatTranscriptLine(speaker, text, new Date())
   if (el.textContent) {
-    el.appendChild(document.createTextNode("\n" + line))
-  } else {
-    el.textContent = line
+    el.appendChild(document.createTextNode("\n"))
   }
+
+  const color = getSpeakerColor(speaker)
+  const time = new Date().toLocaleTimeString()
+
+  const header = document.createElement("span")
+  header.style.color = color
+  header.style.opacity = "0.7"
+  header.textContent = `${speaker} ${time}`
+
+  el.appendChild(header)
+  el.appendChild(document.createTextNode("\n" + text))
+}
+
+// speakerごとに色を割り当てる
+const SPEAKER_COLORS = [
+  "#8ab4f8", // blue
+  "#81c995", // green
+  "#fcad70", // orange
+  "#f28b82", // red
+  "#c58af9", // purple
+  "#78d9ec", // cyan
+  "#fdd663", // yellow
+  "#ff8bcb" // pink
+]
+const speakerColorMap = new Map<string, string>()
+
+function getSpeakerColor(speaker: string): string {
+  const existing = speakerColorMap.get(speaker)
+  if (existing) return existing
+  const color =
+    SPEAKER_COLORS[speakerColorMap.size % SPEAKER_COLORS.length] ?? "#000000"
+  speakerColorMap.set(speaker, color)
+  return color
 }
 
 // --- 字幕領域の検出・監視 ---
