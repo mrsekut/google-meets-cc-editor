@@ -1,55 +1,24 @@
 // Main floating panel with drag, resize, minimize, transcript area, and interim display.
 
 import { useAtomValue } from "jotai"
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 
 import { useAutoCC } from "~features/autoStartCC/useAutoCC"
-import { useDraggable } from "~features/panel/useDraggable"
-import type { ResizeHandle } from "~features/panel/useResizable"
-import { useResizable } from "~features/panel/useResizable"
 import type { CaptionData } from "~features/selectors"
 import { useCaptionObserver } from "~features/useCaptionObserver"
 
 import { InterimDisplay } from "./InterimDisplay"
 import { isMinimizedAtom, MinimizeButton, MinimizeIcon } from "./panel/minimize"
+import { ResizeHandles } from "./panel/ResizeHandler"
+import { usePanel } from "./panel/usePanel"
 import { TranscriptArea } from "./TranscriptArea"
 
 export function CaptionPanel() {
   const [interimText, setInterimText] = useState<CaptionData | null>(null)
   const [hasContent, setHasContent] = useState(false)
   const isMinimized = useAtomValue(isMinimizedAtom)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [size, setSize] = useState({ width: 400, height: 300 })
   const transcriptRef = useRef<HTMLDivElement>(null)
-
-  const { isDragging, handleMouseDown: handleDragMouseDown } = useDraggable(
-    position,
-    setPosition
-  )
-  const { isResizing, handleMouseDown: handleResizeMouseDown } = useResizable(
-    setSize,
-    setPosition
-  )
-
-  useEffect(() => {
-    setPosition({
-      x: window.innerWidth - size.width - 20,
-      y: window.innerHeight - size.height - 20
-    })
-  }, [])
-
-  // ウィンドウリサイズ時にパネルをビューポート内に収める
-  useEffect(() => {
-    const handleWindowResize = () => {
-      setPosition((prev) => ({
-        x: Math.min(prev.x, window.innerWidth - 80),
-        y: Math.min(prev.y, window.innerHeight - 40)
-      }))
-    }
-
-    window.addEventListener("resize", handleWindowResize)
-    return () => window.removeEventListener("resize", handleWindowResize)
-  }, [])
+  const panel = usePanel()
 
   useAutoCC()
   useCaptionObserver(transcriptRef, setHasContent, setInterimText)
@@ -61,10 +30,10 @@ export function CaptionPanel() {
       <div
         style={{
           position: "fixed",
-          left: position.x,
-          top: position.y,
-          width: size.width,
-          height: size.height,
+          left: panel.position.x,
+          top: panel.position.y,
+          width: panel.size.width,
+          height: panel.size.height,
           zIndex: 999999,
           background: "rgba(32, 33, 36, 0.78)",
           backdropFilter: "blur(16px)",
@@ -77,31 +46,12 @@ export function CaptionPanel() {
           fontFamily: "system-ui, sans-serif",
           fontSize: 13,
           overflow: "hidden",
-          userSelect: isDragging || isResizing ? "none" : "auto"
+          userSelect: panel.isInteracting ? "none" : "auto"
         }}>
-        <div
-          style={{
-            padding: "8px 12px",
-            cursor: isDragging ? "grabbing" : "grab",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
-          }}
-          onMouseDown={handleDragMouseDown}>
-          <span
-            style={{
-              fontWeight: 500,
-              fontSize: 11,
-              color: "rgba(255, 255, 255, 0.5)",
-              letterSpacing: "0.5px",
-              textTransform: "uppercase"
-            }}>
-            CC
-          </span>
-          <MinimizeButton />
-        </div>
+        <TitleBar
+          isDragging={panel.isDragging}
+          onMouseDown={panel.handleDragMouseDown}
+        />
 
         <div
           style={{
@@ -113,71 +63,47 @@ export function CaptionPanel() {
           <TranscriptArea
             ref={transcriptRef}
             hasContent={hasContent}
-            onInput={() => {
-              setHasContent(!!transcriptRef.current?.textContent)
-            }}
+            onInput={() => setHasContent(!!transcriptRef.current?.textContent)}
           />
           <InterimDisplay interimText={interimText} />
         </div>
 
-        {(
-          [
-            [
-              "top-left",
-              { top: 0, left: 0, width: 16, height: 16, cursor: "nwse-resize" }
-            ],
-            [
-              "top-right",
-              { top: 0, right: 0, width: 16, height: 16, cursor: "nesw-resize" }
-            ],
-            [
-              "bottom-left",
-              {
-                bottom: 0,
-                left: 0,
-                width: 16,
-                height: 16,
-                cursor: "nesw-resize"
-              }
-            ],
-            [
-              "bottom-right",
-              {
-                bottom: 0,
-                right: 0,
-                width: 16,
-                height: 16,
-                cursor: "nwse-resize"
-              }
-            ],
-            [
-              "top",
-              { top: 0, left: 16, right: 16, height: 6, cursor: "ns-resize" }
-            ],
-            [
-              "bottom",
-              { bottom: 0, left: 16, right: 16, height: 6, cursor: "ns-resize" }
-            ],
-            [
-              "left",
-              { left: 0, top: 16, bottom: 16, width: 6, cursor: "ew-resize" }
-            ],
-            [
-              "right",
-              { right: 0, top: 16, bottom: 16, width: 6, cursor: "ew-resize" }
-            ]
-          ] as const
-        ).map(([handle, style]) => (
-          <div
-            key={handle}
-            onMouseDown={handleResizeMouseDown(handle as ResizeHandle)}
-            style={{
-              position: "absolute",
-              ...style
-            }}
-          />
-        ))}
+        <ResizeHandles onMouseDown={panel.handleResizeMouseDown} />
       </div>
     </>
+  )
+}
+
+function TitleBar({
+  isDragging,
+  onMouseDown
+}: {
+  isDragging: boolean
+  onMouseDown: (e: React.MouseEvent) => void
+}) {
+  return (
+    <div
+      style={{
+        padding: "8px 12px",
+        cursor: isDragging ? "grabbing" : "grab",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexShrink: 0,
+        borderBottom: "1px solid rgba(255, 255, 255, 0.06)"
+      }}
+      onMouseDown={onMouseDown}>
+      <span
+        style={{
+          fontWeight: 500,
+          fontSize: 11,
+          color: "rgba(255, 255, 255, 0.5)",
+          letterSpacing: "0.5px",
+          textTransform: "uppercase"
+        }}>
+        CC
+      </span>
+      <MinimizeButton />
+    </div>
   )
 }
