@@ -6,7 +6,15 @@ import { useCallback, useEffect, useRef, useState } from "react"
 type Size = { width: number; height: number }
 type Position = { x: number; y: number }
 
-export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right"
+export type ResizeHandle =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "top"
+  | "bottom"
+  | "left"
+  | "right"
 
 export function useResizable(
   setSize: Dispatch<SetStateAction<Size>>,
@@ -14,12 +22,12 @@ export function useResizable(
 ) {
   const [isResizing, setIsResizing] = useState(false)
   const resizeStart = useRef({ x: 0, y: 0 })
-  const cornerRef = useRef<Corner>("bottom-right")
+  const handleRef = useRef<ResizeHandle>("bottom-right")
 
   const handleMouseDown = useCallback(
-    (corner: Corner) => (e: React.MouseEvent) => {
+    (handle: ResizeHandle) => (e: React.MouseEvent) => {
       setIsResizing(true)
-      cornerRef.current = corner
+      handleRef.current = handle
       resizeStart.current = { x: e.clientX, y: e.clientY }
       e.preventDefault()
       e.stopPropagation()
@@ -33,14 +41,22 @@ export function useResizable(
     const handleMouseMove = (e: MouseEvent) => {
       const dx = e.clientX - resizeStart.current.x
       const dy = e.clientY - resizeStart.current.y
-      const corner = cornerRef.current
+      const handle = handleRef.current
 
-      const flipX = corner === "top-left" || corner === "bottom-left"
-      const flipY = corner === "top-left" || corner === "top-right"
+      const resizesX = handle !== "top" && handle !== "bottom"
+      const resizesY = handle !== "left" && handle !== "right"
+      const flipX =
+        handle === "top-left" || handle === "bottom-left" || handle === "left"
+      const flipY =
+        handle === "top-left" || handle === "top-right" || handle === "top"
 
       setSize((prev) => ({
-        width: Math.max(250, prev.width + (flipX ? -dx : dx)),
-        height: Math.max(150, prev.height + (flipY ? -dy : dy))
+        width: resizesX
+          ? Math.max(250, prev.width + (flipX ? -dx : dx))
+          : prev.width,
+        height: resizesY
+          ? Math.max(150, prev.height + (flipY ? -dy : dy))
+          : prev.height
       }))
 
       if (flipX || flipY) {
