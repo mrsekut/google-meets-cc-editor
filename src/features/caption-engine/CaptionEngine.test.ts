@@ -6,12 +6,17 @@ describe("CaptionEngine", () => {
   describe("handleCaptionUpdate", () => {
     it("returns setInterim command with full text for new segment", () => {
       const engine = new CaptionEngine()
-      const result = engine.handleCaptionUpdate("block-1", "Alice", "こんにちは")
+      const result = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "こんにちは"
+      )
 
       expect(result.commands).toEqual([
         { type: "setInterim", speaker: "Alice", text: "こんにちは" }
       ])
       expect(result.segmentId).toBe("seg-1")
+      expect(result.finalizeDelayMs).toBe(2500)
     })
 
     it("returns same segmentId for same blockKey", () => {
@@ -47,6 +52,85 @@ describe("CaptionEngine", () => {
       expect(r2.commands).toEqual([
         { type: "setInterim", speaker: "Alice", text: "、今日は" }
       ])
+    })
+  })
+
+  describe("finalizeDelayMs", () => {
+    it("returns 2500ms for normal text", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "こんにちは"
+      )
+      expect(result.finalizeDelayMs).toBe(2500)
+    })
+
+    it("returns 500ms when text ends with 。", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "今日は天気がいいですね。"
+      )
+      expect(result.finalizeDelayMs).toBe(500)
+    })
+
+    it("returns 500ms when text ends with .", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "That sounds good."
+      )
+      expect(result.finalizeDelayMs).toBe(500)
+    })
+
+    it("returns 500ms when text ends with ！", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate("block-1", "Alice", "すごい！")
+      expect(result.finalizeDelayMs).toBe(500)
+    })
+
+    it("returns 500ms when text ends with ？", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "本当ですか？"
+      )
+      expect(result.finalizeDelayMs).toBe(500)
+    })
+
+    it("returns 0ms when unfinalzied text exceeds 100 chars", () => {
+      const engine = new CaptionEngine()
+      const longText = "あ".repeat(100)
+      const result = engine.handleCaptionUpdate("block-1", "Alice", longText)
+      expect(result.finalizeDelayMs).toBe(0)
+    })
+
+    it("max length check uses delta, not full text", () => {
+      const engine = new CaptionEngine()
+
+      // Finalize 80 chars
+      const prefix = "あ".repeat(80)
+      const r1 = engine.handleCaptionUpdate("block-1", "Alice", prefix)
+      engine.finalizeSegment(r1.segmentId, "Alice", prefix)
+
+      // Add 30 more chars (total 110, but delta is only 30)
+      const r2 = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        prefix + "い".repeat(30)
+      )
+      expect(r2.finalizeDelayMs).toBe(2500) // delta=30 < 100, normal delay
+    })
+
+    it("max length takes priority over punctuation", () => {
+      const engine = new CaptionEngine()
+      const longText = "あ".repeat(99) + "。"
+      const result = engine.handleCaptionUpdate("block-1", "Alice", longText)
+      expect(result.finalizeDelayMs).toBe(0) // 100 chars, immediate
     })
   })
 

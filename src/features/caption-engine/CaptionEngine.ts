@@ -9,6 +9,14 @@
 
 import { computeTextDelta } from "~features/format"
 
+// --- 定数 ---
+
+const FINALIZE_DELAY_MS = 2500
+const PUNCTUATION_DELAY_MS = 500
+const MAX_SEGMENT_LENGTH = 100
+
+const PUNCTUATION_RE = /[。.！？!?]$/
+
 // --- Command types ---
 
 export type Command =
@@ -20,6 +28,7 @@ export type Command =
 export type CaptionUpdateResult = {
   commands: Command[]
   segmentId: string
+  finalizeDelayMs: number
 }
 
 // --- Engine ---
@@ -41,9 +50,12 @@ export class CaptionEngine {
     const lastText = this.finalizedSegments.get(segId)
     const interimText = (lastText && computeTextDelta(lastText, text)) ?? text
 
+    const finalizeDelayMs = this.computeFinalizeDelay(interimText, text)
+
     return {
       commands: [{ type: "setInterim", speaker, text: interimText }],
-      segmentId: segId
+      segmentId: segId,
+      finalizeDelayMs
     }
   }
 
@@ -79,6 +91,12 @@ export class CaptionEngine {
   }
 
   // --- private ---
+
+  private computeFinalizeDelay(interimText: string, fullText: string): number {
+    if (interimText.length >= MAX_SEGMENT_LENGTH) return 0
+    if (PUNCTUATION_RE.test(fullText)) return PUNCTUATION_DELAY_MS
+    return FINALIZE_DELAY_MS
+  }
 
   private getOrCreateSegmentId(blockKey: string): string {
     const existing = this.blockToSegmentId.get(blockKey)

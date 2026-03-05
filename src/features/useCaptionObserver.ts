@@ -22,9 +22,6 @@ import {
   SELECTORS
 } from "~features/selectors"
 
-// 字幕テキストが更新されなくなってから確定するまでの待ち時間
-const FINALIZE_DELAY_MS = 2500
-
 // blockKey用のグローバルカウンター（DOMのElement参照をstringキーに変換）
 const blockKeyCounter = { current: 0 }
 const blockKeyMap = new WeakMap<Element, string>()
@@ -113,7 +110,7 @@ export function useCaptionObserver(
           activeTimers.delete(segId)
           const commands = engine.finalizeSegment(segId, speaker, text)
           executeCommands(commands)
-        }, FINALIZE_DELAY_MS)
+        }, result.finalizeDelayMs)
 
         activeTimers.set(segId, { timerId, speaker, text })
       }
@@ -165,6 +162,11 @@ function findCaptionBlock(mutation: MutationRecord): Element | null {
       if (node.matches?.(SELECTORS.captionBlock)) return node
       const nested = node.querySelector?.(SELECTORS.captionBlock)
       if (nested) return nested
+    }
+    // フォールバック: テキスト内容変更（Text node追加）の場合、
+    // mutation.targetが字幕ブロック内にあるか確認
+    if (mutation.target instanceof HTMLElement) {
+      return mutation.target.closest(SELECTORS.captionBlock)
     }
   }
   return null
