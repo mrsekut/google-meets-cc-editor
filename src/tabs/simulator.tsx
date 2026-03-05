@@ -19,6 +19,7 @@ const SCENARIOS: Record<string, { label: string; steps: CaptionStep[] }> = {
   singleSpeaker: {
     label: "1人長話",
     steps: [
+      // --- 第1文: 挨拶 ---
       { speaker: "田中", text: "えーと", delayMs: 0 },
       { speaker: "田中", text: "えーと、今日は", delayMs: 400 },
       { speaker: "田中", text: "えーと、今日はプロジェクトの", delayMs: 800 },
@@ -29,24 +30,142 @@ const SCENARIOS: Record<string, { label: string; steps: CaptionStep[] }> = {
       },
       {
         speaker: "田中",
-        text: "えーと、今日はプロジェクトの進捗についてお話しします",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。",
         delayMs: 1600
       },
-      // 2.5秒の無音で確定 → 新しいセグメント
+      // --- 第2文: テスト基盤 ---
       {
         speaker: "田中",
-        text: "まず最初に、テスト基盤の整備が完了しました",
-        delayMs: 5000
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に",
+        delayMs: 2400
       },
       {
         speaker: "田中",
-        text: "まず最初に、テスト基盤の整備が完了しました。Vitestを導入し",
-        delayMs: 5500
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の",
+        delayMs: 2800
       },
       {
         speaker: "田中",
-        text: "まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。",
+        delayMs: 3200
+      },
+      // --- 第3文: Vitest導入 ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し",
+        delayMs: 4000
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが",
+        delayMs: 4400
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。",
+        delayMs: 4800
+      },
+      // --- 第4文: CaptionEngine ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に",
+        delayMs: 5600
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineという",
         delayMs: 6000
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して",
+        delayMs: 6400
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。",
+        delayMs: 6800
+      },
+      // --- 第5文: コマンドパターン ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで",
+        delayMs: 7600
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて",
+        delayMs: 8000
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。",
+        delayMs: 8400
+      },
+      // --- 第6文: テスト結果 ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが",
+        delayMs: 9200
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。",
+        delayMs: 9600
+      },
+      // --- 第7文: シミュレータ ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも",
+        delayMs: 10400
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。",
+        delayMs: 10800
+      },
+      // --- 第8文: 句読点commit ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として",
+        delayMs: 11600
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを",
+        delayMs: 12000
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを実装しました。",
+        delayMs: 12400
+      },
+      // --- 第9文: 最大長制限 ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを実装しました。これにより",
+        delayMs: 13200
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを実装しました。これにより、長い発話でも文の区切りで",
+        delayMs: 13600
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを実装しました。これにより、長い発話でも文の区切りで適切にcommitされるようになります。",
+        delayMs: 14000
+      },
+      // --- 第10文: まとめ ---
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを実装しました。これにより、長い発話でも文の区切りで適切にcommitされるようになります。以上が今回の進捗報告です。",
+        delayMs: 14800
+      },
+      {
+        speaker: "田中",
+        text: "えーと、今日はプロジェクトの進捗についてお話しします。まず最初に、テスト基盤の整備が完了しました。Vitestを導入し、ユニットテストが書けるようになりました。次に、CaptionEngineというクラスを抽出して、ロジックを分離しました。これはコマンドパターンで設計されていて、副作用を持ちません。現時点で31個のテストが全て通っています。また、シミュレータページも作成しました。今後の改善として、句読点での早期commitを実装しました。これにより、長い発話でも文の区切りで適切にcommitされるようになります。以上が今回の進捗報告です。何かご質問はありますか？",
+        delayMs: 15200
       }
     ]
   },
@@ -121,9 +240,13 @@ function Simulator() {
           region.appendChild(currentBlock)
           currentSpeaker = step.speaker
         } else if (currentBlock) {
-          // 同じspeakerならテキストを更新
+          // 同じspeakerならテキストを更新（characterData mutationを発火させる）
           const textEl = currentBlock.querySelector(".ygicle")
-          if (textEl) textEl.textContent = step.text
+          if (textEl?.firstChild) {
+            textEl.firstChild.textContent = step.text
+          } else if (textEl) {
+            textEl.textContent = step.text
+          }
         }
       }, step.delayMs)
       timersRef.current.push(timer)
@@ -139,9 +262,7 @@ function Simulator() {
         minHeight: "100vh",
         padding: 24
       }}>
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>
-        Caption Simulator
-      </h1>
+      <h1 style={{ fontSize: 20, marginBottom: 16 }}>Caption Simulator</h1>
       <p style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>
         Google Meetsの字幕DOM構造を模擬生成し、CaptionPanelの動作を確認します。
         <br />
@@ -149,7 +270,8 @@ function Simulator() {
       </p>
 
       {/* シナリオボタン */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         {Object.entries(SCENARIOS).map(([key, scenario]) => (
           <button
             key={key}
@@ -223,7 +345,8 @@ function createCaptionBlock(speaker: string, text: string): HTMLDivElement {
   const speakerEl = document.createElement("div")
   speakerEl.className = "NWpY1d"
   speakerEl.textContent = speaker
-  speakerEl.style.cssText = "font-size: 11px; color: #8ab4f8; margin-bottom: 2px;"
+  speakerEl.style.cssText =
+    "font-size: 11px; color: #8ab4f8; margin-bottom: 2px;"
 
   const textEl = document.createElement("div")
   textEl.className = "ygicle"
