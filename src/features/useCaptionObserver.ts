@@ -3,14 +3,18 @@
 // 全体の流れ:
 //   字幕DOM変化 → observeCaptionRegion(MutationObserver)
 //     → findCaptionBlock(mutationから字幕ブロック特定)
-//     → handleCaptionUpdate(デバウンスで確定判定)
-//       ├→ 即座: setInterimText(interim表示を更新)
-//       └→ 2.5秒後: appendToTranscript(エディターに確定テキスト書き込み)
+//     → CaptionEngine.handleCaptionUpdate(コマンド生成)
+//       ├→ 即座: setInterimコマンド実行
+//       └→ 2.5秒後: CaptionEngine.finalizeSegment → コマンド実行
 
 import type { Dispatch, RefObject, SetStateAction } from "react"
 import { useEffect } from "react"
 
-import { computeTextDelta } from "~features/format"
+import {
+  CaptionEngine,
+  type Command
+} from "~features/caption-engine/CaptionEngine"
+import { SpeakerColorMap } from "~features/caption-engine/SpeakerColorMap"
 import type { CaptionData } from "~features/selectors"
 import {
   extractCaptionData,
@@ -21,8 +25,17 @@ import {
 // 字幕テキストが更新されなくなってから確定するまでの待ち時間
 const FINALIZE_DELAY_MS = 2500
 
-// セグメントIDのグローバルカウンター（useEffect再実行をまたいで一意性を保つ）
-const segmentId = { current: 0 }
+// blockKey用のグローバルカウンター（DOMのElement参照をstringキーに変換）
+const blockKeyCounter = { current: 0 }
+const blockKeyMap = new WeakMap<Element, string>()
+
+function getBlockKey(el: Element): string {
+  const existing = blockKeyMap.get(el)
+  if (existing) return existing
+  const key = `block-${++blockKeyCounter.current}`
+  blockKeyMap.set(el, key)
+  return key
+}
 
 export function useCaptionObserver(
   transcriptRef: RefObject<HTMLDivElement>,
@@ -30,96 +43,104 @@ export function useCaptionObserver(
   setInterimText: Dispatch<SetStateAction<CaptionData | null>>
 ) {
   useEffect(() => {
-    // 字幕ブロック(DOM要素) → セグメントID。同じDOM要素の変化を同一セグメントとして追跡する
-    const blockToSegmentId = new Map<Element, string>()
-    // セグメントID → setTimeout ID。テキスト更新のたびにリセットされるデバウンスタイマー
-    const activeTimers = new Map<string, number>()
-    // セグメントID → 最後に確定したテキスト。差分計算に使う
-    const finalizedSegments = new Map<string, string>()
+    const engine = new CaptionEngine()
+    const speakerColors = new SpeakerColorMap()
 
-    // 字幕領域を監視開始。mutation → 字幕ブロック特定 → handleCaptionUpdate
+    // セグメントID → { timerId, speaker, text }
+    const activeTimers = new Map<
+      string,
+      { timerId: number; speaker: string; text: string }
+    >()
+
+    // コマンドを解釈してReact state/DOMを更新
+    function executeCommand(cmd: Command) {
+      switch (cmd.type) {
+        case "setInterim":
+          setInterimText({ speaker: cmd.speaker, text: cmd.text })
+          break
+        case "clearInterim":
+          setInterimText((prev) => {
+            if (prev?.speaker === cmd.speaker) return null
+            return prev
+          })
+          break
+        case "appendTranscript": {
+          const el = transcriptRef.current
+          if (!el) break
+          appendToTranscript(el, speakerColors, cmd.speaker, cmd.text)
+          el.scrollTop = el.scrollHeight
+          break
+        }
+        case "setHasContent":
+          setHasContent(true)
+          break
+      }
+    }
+
+    function executeCommands(commands: Command[]) {
+      for (const cmd of commands) executeCommand(cmd)
+    }
+
+    // 字幕領域を監視開始
     const cleanup = observeCaptionRegion((mutations) => {
       const processedBlocks = new Set<Element>()
       for (const mutation of mutations) {
         const captionBlock = findCaptionBlock(mutation)
         if (!captionBlock || processedBlocks.has(captionBlock)) continue
         processedBlocks.add(captionBlock)
-        handleCaptionUpdate(captionBlock)
+
+        const data = extractCaptionData(captionBlock)
+        if (!data) continue
+
+        const blockKey = getBlockKey(captionBlock)
+        const result = engine.handleCaptionUpdate(
+          blockKey,
+          data.speaker,
+          data.text
+        )
+
+        // 即時コマンド実行
+        executeCommands(result.commands)
+
+        // デバウンスタイマー管理
+        const existing = activeTimers.get(result.segmentId)
+        if (existing) clearTimeout(existing.timerId)
+
+        const segId = result.segmentId
+        const speaker = data.speaker
+        const text = data.text
+        const timerId = window.setTimeout(() => {
+          activeTimers.delete(segId)
+          const commands = engine.finalizeSegment(segId, speaker, text)
+          executeCommands(commands)
+        }, FINALIZE_DELAY_MS)
+
+        activeTimers.set(segId, { timerId, speaker, text })
       }
     })
 
     return () => {
       cleanup()
-      for (const timer of activeTimers.values()) clearTimeout(timer)
+      for (const { timerId } of activeTimers.values()) clearTimeout(timerId)
       activeTimers.clear()
-      blockToSegmentId.clear()
-    }
-
-    function handleCaptionUpdate(captionBlock: Element) {
-      const result = extractCaptionData(captionBlock)
-      if (!result) return
-
-      const { speaker, text } = result
-
-      // 既知のブロックならIDを再利用、新規なら発番
-      const segId =
-        blockToSegmentId.get(captionBlock) ??
-        (() => {
-          const id = `seg-${++segmentId.current}`
-          blockToSegmentId.set(captionBlock, id)
-          return id
-        })()
-
-      // 即座にinterim表示を更新（確定済み部分を除いた未確定テキストのみ表示）
-      const lastText = finalizedSegments.get(segId)
-      const interimText = (lastText && computeTextDelta(lastText, text)) ?? text
-      setInterimText({ speaker, text: interimText })
-
-      // デバウンス: 前回のタイマーをキャンセルして再セット
-      const existingTimer = activeTimers.get(segId)
-      if (existingTimer != null) clearTimeout(existingTimer)
-
-      const currentSegId = segId
-      const timer = window.setTimeout(() => {
-        // --- ここから確定処理（2.5秒間テキスト更新がなかった） ---
-        activeTimers.delete(currentSegId)
-
-        // interim表示をクリア（ただし別の発話で上書きされていたら残す）
-        setInterimText((prev) => {
-          if (prev?.speaker === speaker) return null
-          return prev
-        })
-
-        // 前回確定時と同じテキストなら書き込みスキップ
-        const lastText = finalizedSegments.get(currentSegId)
-        if (lastText === text) return
-
-        const el = transcriptRef.current
-        if (!el) return
-
-        // 差分があれば差分だけ、なければ全文を書き込み
-        // 例: "こんにちは" → "こんにちは、今日は" なら "、今日は" だけ追記
-        const displayText =
-          (lastText && computeTextDelta(lastText, text)) ?? text
-        appendToTranscript(el, speaker, displayText)
-        finalizedSegments.set(currentSegId, text)
-        setHasContent(true)
-        el.scrollTop = el.scrollHeight
-      }, FINALIZE_DELAY_MS)
-
-      activeTimers.set(segId, timer)
+      engine.dispose()
     }
   }, [])
 }
 
 // --- DOM書き込み ---
 
-function appendToTranscript(el: HTMLDivElement, speaker: string, text: string) {
+function appendToTranscript(
+  el: HTMLDivElement,
+  speakerColors: SpeakerColorMap,
+  speaker: string,
+  text: string
+) {
   if (el.textContent) {
     el.appendChild(document.createTextNode("\n"))
   }
 
-  const color = getSpeakerColor(speaker)
+  const color = speakerColors.getColor(speaker)
   const time = new Date().toLocaleTimeString()
 
   const header = document.createElement("span")
@@ -131,33 +152,9 @@ function appendToTranscript(el: HTMLDivElement, speaker: string, text: string) {
   el.appendChild(document.createTextNode("\n" + text))
 }
 
-// speakerごとに色を割り当てる
-const SPEAKER_COLORS = [
-  "#8ab4f8", // blue
-  "#81c995", // green
-  "#fcad70", // orange
-  "#f28b82", // red
-  "#c58af9", // purple
-  "#78d9ec", // cyan
-  "#fdd663", // yellow
-  "#ff8bcb" // pink
-]
-const speakerColorMap = new Map<string, string>()
-
-function getSpeakerColor(speaker: string): string {
-  const existing = speakerColorMap.get(speaker)
-  if (existing) return existing
-  const color =
-    SPEAKER_COLORS[speakerColorMap.size % SPEAKER_COLORS.length] ?? "#000000"
-  speakerColorMap.set(speaker, color)
-  return color
-}
-
 // --- 字幕領域の検出・監視 ---
 
 // MutationRecordから該当する字幕ブロック(.nMcdL)を探す
-// - characterData変化: テキスト変更 → 親から字幕ブロックを辿る
-// - childList変化: 要素追加 → 追加ノード内から字幕ブロックを探す
 function findCaptionBlock(mutation: MutationRecord): Element | null {
   if (mutation.type === "characterData" && mutation.target.parentElement) {
     return mutation.target.parentElement.closest(SELECTORS.captionBlock)
@@ -174,9 +171,6 @@ function findCaptionBlock(mutation: MutationRecord): Element | null {
 }
 
 // 字幕領域(caption region)を見つけてMutationObserverを張る。
-// 字幕ONにする前はregionがDOMに存在しないため、二段構えで監視する:
-//   1. regionが既にあれば即座に監視開始
-//   2. なければbody全体を監視し、regionが現れたら切り替え
 function observeCaptionRegion(
   onMutations: (mutations: MutationRecord[]) => void
 ): () => void {
@@ -187,7 +181,6 @@ function observeCaptionRegion(
   if (region) {
     startObserving(region)
   } else {
-    // regionが見つかるまでbody全体を監視
     regionObserver = new MutationObserver(() => {
       const r = findCaptionRegion()
       if (r) {
