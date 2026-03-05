@@ -10,7 +10,14 @@ type Props = {
 export const TranscriptArea = forwardRef<HTMLDivElement, Props>(
   function TranscriptArea({ hasContent, onInput }, ref) {
     return (
-      <div style={{ position: "relative", flex: 1, overflow: "hidden" }}>
+      <div
+        style={{
+          position: "relative",
+          flex: 1,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column"
+        }}>
         {!hasContent && (
           <div
             style={{
@@ -33,9 +40,10 @@ export const TranscriptArea = forwardRef<HTMLDivElement, Props>(
           suppressContentEditableWarning
           onInput={onInput}
           style={{
-            height: "100%",
+            flex: 1,
+            minHeight: 0,
             overflow: "auto",
-            padding: "8px 12px 4em 12px",
+            padding: "8px 12px",
             outline: "none",
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
