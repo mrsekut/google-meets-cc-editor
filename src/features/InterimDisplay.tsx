@@ -22,10 +22,9 @@ export function InterimDisplay({ interimText }: Props) {
       <div style={{ color: "rgba(255, 255, 255, 0.25)" }}>
         {interimText?.speaker}
       </div>
-      <div style={{ overflow: "hidden" }}>
+      <div style={{ overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
         <div
           style={{
-            minHeight: "100%",
             color: "rgba(255, 255, 255, 0.4)"
           }}>
           {interimText?.text}
