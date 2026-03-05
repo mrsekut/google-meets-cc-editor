@@ -35,7 +35,7 @@ export const TranscriptArea = forwardRef<HTMLDivElement, Props>(
           style={{
             height: "100%",
             overflow: "auto",
-            padding: "8px 12px",
+            padding: "8px 12px 4em 12px",
             outline: "none",
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
