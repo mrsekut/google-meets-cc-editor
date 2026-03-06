@@ -1,28 +1,44 @@
 // Main floating panel with drag, resize, minimize, transcript area, and interim display.
 
 import { useAtomValue } from "jotai"
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 import { useAutoCC } from "~features/autoStartCC/useAutoCC"
 import { logger } from "~features/caption-engine/DebugLogger"
+import { SpeakerColorMap } from "~features/caption-engine/SpeakerColorMap"
 import type { CaptionData } from "~features/selectors"
+import { CopyButton } from "~features/transcript-view/CopyButton"
+import { TranscriptArea } from "~features/transcript-view/TranscriptArea"
+import type { Segment } from "~features/transcript-view/types"
 import { useCaptionObserver } from "~features/useCaptionObserver"
 
 import { InterimDisplay } from "./InterimDisplay"
 import { isMinimizedAtom, MinimizeButton, MinimizeIcon } from "./panel/minimize"
 import { ResizeHandles } from "./panel/ResizeHandler"
 import { usePanel } from "./panel/usePanel"
-import { TranscriptArea } from "./TranscriptArea"
 
 export function CaptionPanel() {
   const [interimText, setInterimText] = useState<CaptionData | null>(null)
-  const [hasContent, setHasContent] = useState(false)
+  const [segments, setSegments] = useState<Segment[]>([])
   const isMinimized = useAtomValue(isMinimizedAtom)
-  const transcriptRef = useRef<HTMLDivElement>(null)
   const panel = usePanel()
+  const speakerColors = useRef(new SpeakerColorMap())
+
+  const onAppendSegment = useCallback((speaker: string, text: string) => {
+    const color = speakerColors.current.getColor(speaker)
+    const time = new Date().toLocaleTimeString()
+    setSegments((prev) => [
+      ...prev,
+      { id: Date.now(), speaker, text, time, color }
+    ])
+  }, [])
+
+  const onUpdateSegment = useCallback((id: number, text: string) => {
+    setSegments((prev) => prev.map((s) => (s.id === id ? { ...s, text } : s)))
+  }, [])
 
   useAutoCC()
-  useCaptionObserver(transcriptRef, setHasContent, setInterimText)
+  useCaptionObserver(onAppendSegment, setInterimText)
 
   return (
     <>
@@ -52,6 +68,7 @@ export function CaptionPanel() {
         <TitleBar
           isDragging={panel.isDragging}
           onMouseDown={panel.handleDragMouseDown}
+          segments={segments}
         />
 
         <div
@@ -62,9 +79,8 @@ export function CaptionPanel() {
             overflow: "hidden"
           }}>
           <TranscriptArea
-            ref={transcriptRef}
-            hasContent={hasContent}
-            onInput={() => setHasContent(!!transcriptRef.current?.textContent)}
+            segments={segments}
+            onUpdateSegment={onUpdateSegment}
           />
           <InterimDisplay interimText={interimText} />
         </div>
@@ -77,10 +93,12 @@ export function CaptionPanel() {
 
 function TitleBar({
   isDragging,
-  onMouseDown
+  onMouseDown,
+  segments
 }: {
   isDragging: boolean
   onMouseDown: (e: React.MouseEvent) => void
+  segments: Segment[]
 }) {
   return (
     <div
@@ -105,6 +123,7 @@ function TitleBar({
         CC
       </span>
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <CopyButton segments={segments} />
         <button
           onClick={(e) => {
             e.stopPropagation()
