@@ -68,8 +68,10 @@ export function useCaptionObserver(
 
           const el = transcriptRef.current
           if (!el) break
+
+          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 30
           appendToTranscript(el, speakerColors, cmd.speaker, cmd.text)
-          el.scrollTop = el.scrollHeight
+          if (atBottom) el.scrollTop = el.scrollHeight
           break
         }
         case "setHasContent":
