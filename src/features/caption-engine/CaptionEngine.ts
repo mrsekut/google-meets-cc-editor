@@ -13,7 +13,6 @@ import { computeTextDelta } from "~features/format"
 
 const FINALIZE_DELAY_MS = 2500
 const PUNCTUATION_DELAY_MS = 500
-const MAX_SEGMENT_LENGTH = 100
 
 const PUNCTUATION_RE = /[。.！？!?]$/
 
@@ -68,14 +67,31 @@ export class CaptionEngine {
       return [{ type: "clearInterim", speaker }]
     }
 
-    const displayText = (lastText && computeTextDelta(lastText, text)) ?? text
+    // 常に最新テキストを記録
     this.finalizedSegments.set(segId, text)
 
-    return [
-      { type: "clearInterim", speaker },
-      { type: "appendTranscript", speaker, text: displayText },
-      { type: "setHasContent" }
-    ]
+    // 初回確定: フルテキストを書き込む
+    if (!lastText) {
+      return [
+        { type: "clearInterim", speaker },
+        { type: "appendTranscript", speaker, text },
+        { type: "setHasContent" }
+      ]
+    }
+
+    // delta計算: テキストが伸びた場合は差分のみ書き込む
+    const delta = computeTextDelta(lastText, text)
+    if (delta) {
+      return [
+        { type: "clearInterim", speaker },
+        { type: "appendTranscript", speaker, text: delta },
+        { type: "setHasContent" }
+      ]
+    }
+
+    // deltaが取れない場合（音声認識の修正のみ）: 書き込みスキップ
+    // finalizedSegmentsは更新済みなので、次回のdelta計算は最新ベースで行われる
+    return [{ type: "clearInterim", speaker }]
   }
 
   dispose(): void {
@@ -92,8 +108,7 @@ export class CaptionEngine {
 
   // --- private ---
 
-  private computeFinalizeDelay(interimText: string, fullText: string): number {
-    if (interimText.length >= MAX_SEGMENT_LENGTH) return 0
+  private computeFinalizeDelay(_interimText: string, fullText: string): number {
     if (PUNCTUATION_RE.test(fullText)) return PUNCTUATION_DELAY_MS
     return FINALIZE_DELAY_MS
   }

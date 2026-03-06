@@ -102,35 +102,18 @@ describe("CaptionEngine", () => {
       expect(result.finalizeDelayMs).toBe(500)
     })
 
-    it("returns 0ms when unfinalzied text exceeds 100 chars", () => {
+    it("uses normal delay even for long text (no immediate finalization)", () => {
       const engine = new CaptionEngine()
-      const longText = "あ".repeat(100)
+      const longText = "あ".repeat(200)
       const result = engine.handleCaptionUpdate("block-1", "Alice", longText)
-      expect(result.finalizeDelayMs).toBe(0)
+      expect(result.finalizeDelayMs).toBe(2500)
     })
 
-    it("max length check uses delta, not full text", () => {
-      const engine = new CaptionEngine()
-
-      // Finalize 80 chars
-      const prefix = "あ".repeat(80)
-      const r1 = engine.handleCaptionUpdate("block-1", "Alice", prefix)
-      engine.finalizeSegment(r1.segmentId, "Alice", prefix)
-
-      // Add 30 more chars (total 110, but delta is only 30)
-      const r2 = engine.handleCaptionUpdate(
-        "block-1",
-        "Alice",
-        prefix + "い".repeat(30)
-      )
-      expect(r2.finalizeDelayMs).toBe(2500) // delta=30 < 100, normal delay
-    })
-
-    it("max length takes priority over punctuation", () => {
+    it("uses punctuation delay for long text ending with punctuation", () => {
       const engine = new CaptionEngine()
       const longText = "あ".repeat(99) + "。"
       const result = engine.handleCaptionUpdate("block-1", "Alice", longText)
-      expect(result.finalizeDelayMs).toBe(0) // 100 chars, immediate
+      expect(result.finalizeDelayMs).toBe(500) // punctuation, not immediate
     })
   })
 
@@ -190,25 +173,44 @@ describe("CaptionEngine", () => {
       ])
     })
 
-    it("appends full text when new text does not extend previous", () => {
+    it("skips append when text is revised but no new content (delta not computable)", () => {
       const engine = new CaptionEngine()
       const result = engine.handleCaptionUpdate("block-1", "Alice", "hello")
 
       // Finalize first
       engine.finalizeSegment(result.segmentId, "Alice", "hello")
 
-      // Completely different text
+      // Completely different text - delta can't be computed, skip append
       const commands = engine.finalizeSegment(
         result.segmentId,
         "Alice",
         "goodbye"
       )
 
-      expect(commands).toEqual([
-        { type: "clearInterim", speaker: "Alice" },
-        { type: "appendTranscript", speaker: "Alice", text: "goodbye" },
-        { type: "setHasContent" }
-      ])
+      expect(commands).toEqual([{ type: "clearInterim", speaker: "Alice" }])
+    })
+
+    it("still updates finalized text even when append is skipped", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate("block-1", "Alice", "hello")
+
+      engine.finalizeSegment(result.segmentId, "Alice", "hello")
+      engine.finalizeSegment(result.segmentId, "Alice", "goodbye")
+
+      // finalizedText should be updated to "goodbye"
+      expect(engine.getFinalizedText(result.segmentId)).toBe("goodbye")
+
+      // Next extension from "goodbye" should work
+      const commands = engine.finalizeSegment(
+        result.segmentId,
+        "Alice",
+        "goodbye world"
+      )
+      expect(commands).toContainEqual({
+        type: "appendTranscript",
+        speaker: "Alice",
+        text: "world"
+      })
     })
 
     it("records finalized text for future delta computation", () => {
@@ -217,6 +219,70 @@ describe("CaptionEngine", () => {
       engine.finalizeSegment(result.segmentId, "Alice", "hello")
 
       expect(engine.getFinalizedText(result.segmentId)).toBe("hello")
+    })
+  })
+
+  describe("speech recognition revision", () => {
+    it("skips append when text is revised (spaces changed) without new content", () => {
+      const engine = new CaptionEngine()
+      const r = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "ところも 知って。"
+      )
+      engine.finalizeSegment(r.segmentId, "Alice", "ところも 知って。")
+
+      // Space removed, no new content
+      const commands = engine.finalizeSegment(
+        r.segmentId,
+        "Alice",
+        "ところも知って。"
+      )
+      expect(commands).toEqual([{ type: "clearInterim", speaker: "Alice" }])
+    })
+
+    it("appends only new content when text is revised and extended", () => {
+      const engine = new CaptionEngine()
+      const r = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "ところも 知って。"
+      )
+      engine.finalizeSegment(r.segmentId, "Alice", "ところも 知って。")
+
+      // Space removed + new content added
+      const commands = engine.finalizeSegment(
+        r.segmentId,
+        "Alice",
+        "ところも知っていたので。"
+      )
+      expect(commands).toContainEqual({
+        type: "appendTranscript",
+        speaker: "Alice",
+        text: "いたので。"
+      })
+    })
+
+    it("handles caption window expansion (lastText found as substring)", () => {
+      const engine = new CaptionEngine()
+      const r = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "要件のいただいてる部分"
+      )
+      engine.finalizeSegment(r.segmentId, "Alice", "要件のいただいてる部分")
+
+      // Caption window expanded to show earlier text + new content after lastText
+      const commands = engine.finalizeSegment(
+        r.segmentId,
+        "Alice",
+        "ありがとうございます。要件のいただいてる部分と、ご紹介"
+      )
+      expect(commands).toContainEqual({
+        type: "appendTranscript",
+        speaker: "Alice",
+        text: "と、ご紹介"
+      })
     })
   })
 
