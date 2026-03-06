@@ -1,4 +1,4 @@
-// Google Meetsの字幕DOMを監視し、確定したテキストをエディターに書き込むhook。
+// Google Meetsの字幕DOMを監視し、確定したテキストをコールバック経由で通知するhook。
 //
 // 全体の流れ:
 //   字幕DOM変化 → observeCaptionRegion(MutationObserver)
@@ -7,7 +7,7 @@
 //       ├→ 即座: setInterimコマンド実行
 //       └→ 2.5秒後: CaptionEngine.finalizeSegment → コマンド実行
 
-import type { Dispatch, RefObject, SetStateAction } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import { useEffect } from "react"
 
 import {
@@ -15,7 +15,6 @@ import {
   type Command
 } from "~features/caption-engine/CaptionEngine"
 import { logger } from "~features/caption-engine/DebugLogger"
-import { SpeakerColorMap } from "~features/caption-engine/SpeakerColorMap"
 import type { CaptionData } from "~features/selectors"
 import {
   extractCaptionData,
@@ -36,13 +35,11 @@ function getBlockKey(el: Element): string {
 }
 
 export function useCaptionObserver(
-  transcriptRef: RefObject<HTMLDivElement>,
-  setHasContent: Dispatch<SetStateAction<boolean>>,
+  onAppendSegment: (speaker: string, text: string) => void,
   setInterimText: Dispatch<SetStateAction<CaptionData | null>>
 ) {
   useEffect(() => {
     const engine = new CaptionEngine()
-    const speakerColors = new SpeakerColorMap()
 
     // セグメントID → { timerId, speaker, text }
     const activeTimers = new Map<
@@ -50,7 +47,7 @@ export function useCaptionObserver(
       { timerId: number; speaker: string; text: string }
     >()
 
-    // コマンドを解釈してReact state/DOMを更新
+    // コマンドを解釈して実行
     function executeCommand(cmd: Command) {
       switch (cmd.type) {
         case "setInterim":
@@ -65,17 +62,10 @@ export function useCaptionObserver(
         case "appendTranscript": {
           // [debug] appendTranscriptコマンド実行時
           logger.log({ phase: "command", speaker: cmd.speaker, text: cmd.text })
-
-          const el = transcriptRef.current
-          if (!el) break
-
-          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 30
-          appendToTranscript(el, speakerColors, cmd.speaker, cmd.text)
-          if (atBottom) el.scrollTop = el.scrollHeight
+          onAppendSegment(cmd.speaker, cmd.text)
           break
         }
         case "setHasContent":
-          setHasContent(true)
           break
       }
     }
@@ -168,30 +158,6 @@ export function useCaptionObserver(
       engine.dispose()
     }
   }, [])
-}
-
-// --- DOM書き込み ---
-
-function appendToTranscript(
-  el: HTMLDivElement,
-  speakerColors: SpeakerColorMap,
-  speaker: string,
-  text: string
-) {
-  if (el.textContent) {
-    el.appendChild(document.createTextNode("\n"))
-  }
-
-  const color = speakerColors.getColor(speaker)
-  const time = new Date().toLocaleTimeString()
-
-  const header = document.createElement("span")
-  header.style.color = color
-  header.style.opacity = "0.7"
-  header.textContent = `${speaker} ${time}`
-
-  el.appendChild(header)
-  el.appendChild(document.createTextNode("\n" + text))
 }
 
 // --- 字幕領域の検出・監視 ---

@@ -1,28 +1,31 @@
 // Main floating panel with drag, resize, minimize, transcript area, and interim display.
 
 import { useAtomValue } from "jotai"
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 import { useAutoCC } from "~features/autoStartCC/useAutoCC"
 import { logger } from "~features/caption-engine/DebugLogger"
 import type { CaptionData } from "~features/selectors"
+import { TranscriptArea, type TranscriptHandle } from "~features/TranscriptArea"
 import { useCaptionObserver } from "~features/useCaptionObserver"
 
 import { InterimDisplay } from "./InterimDisplay"
 import { isMinimizedAtom, MinimizeButton, MinimizeIcon } from "./panel/minimize"
 import { ResizeHandles } from "./panel/ResizeHandler"
 import { usePanel } from "./panel/usePanel"
-import { TranscriptArea } from "./TranscriptArea"
 
 export function CaptionPanel() {
   const [interimText, setInterimText] = useState<CaptionData | null>(null)
-  const [hasContent, setHasContent] = useState(false)
   const isMinimized = useAtomValue(isMinimizedAtom)
-  const transcriptRef = useRef<HTMLDivElement>(null)
+  const transcriptRef = useRef<TranscriptHandle>(null)
   const panel = usePanel()
 
+  const onAppendSegment = useCallback((speaker: string, text: string) => {
+    transcriptRef.current?.append(speaker, text)
+  }, [])
+
   useAutoCC()
-  useCaptionObserver(transcriptRef, setHasContent, setInterimText)
+  useCaptionObserver(onAppendSegment, setInterimText)
 
   return (
     <>
@@ -61,11 +64,7 @@ export function CaptionPanel() {
             flexDirection: "column",
             overflow: "hidden"
           }}>
-          <TranscriptArea
-            ref={transcriptRef}
-            hasContent={hasContent}
-            onInput={() => setHasContent(!!transcriptRef.current?.textContent)}
-          />
+          <TranscriptArea ref={transcriptRef} />
           <InterimDisplay interimText={interimText} />
         </div>
 
