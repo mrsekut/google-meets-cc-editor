@@ -4,6 +4,7 @@ import { useAtomValue } from "jotai"
 import { useRef, useState } from "react"
 
 import { useAutoCC } from "~features/autoStartCC/useAutoCC"
+import { logger } from "~features/caption-engine/DebugLogger"
 import type { CaptionData } from "~features/selectors"
 import { useCaptionObserver } from "~features/useCaptionObserver"
 
@@ -103,7 +104,26 @@ function TitleBar({
         }}>
         CC
       </span>
-      <MinimizeButton />
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            logger.download()
+          }}
+          title="Export debug log"
+          style={{
+            background: "none",
+            border: "none",
+            color: "rgba(255, 255, 255, 0.4)",
+            cursor: "pointer",
+            fontSize: 14,
+            padding: "2px 4px",
+            lineHeight: 1
+          }}>
+          ↓
+        </button>
+        <MinimizeButton />
+      </div>
     </div>
   )
 }

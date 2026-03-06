@@ -14,6 +14,7 @@ import {
   CaptionEngine,
   type Command
 } from "~features/caption-engine/CaptionEngine"
+import { logger } from "~features/caption-engine/DebugLogger"
 import { SpeakerColorMap } from "~features/caption-engine/SpeakerColorMap"
 import type { CaptionData } from "~features/selectors"
 import {
@@ -62,6 +63,9 @@ export function useCaptionObserver(
           })
           break
         case "appendTranscript": {
+          // [debug] appendTranscriptコマンド実行時
+          logger.log({ phase: "command", speaker: cmd.speaker, text: cmd.text })
+
           const el = transcriptRef.current
           if (!el) break
           appendToTranscript(el, speakerColors, cmd.speaker, cmd.text)
@@ -90,11 +94,28 @@ export function useCaptionObserver(
         if (!data) continue
 
         const blockKey = getBlockKey(captionBlock)
+
+        // [debug] mutation処理後
+        logger.log({
+          phase: "mutation",
+          blockKey,
+          speaker: data.speaker,
+          text: data.text
+        })
+
         const result = engine.handleCaptionUpdate(
           blockKey,
           data.speaker,
           data.text
         )
+
+        // [debug] handleCaptionUpdate後
+        logger.log({
+          phase: "handle",
+          segId: result.segmentId,
+          delayMs: result.finalizeDelayMs,
+          text: data.text
+        })
 
         // 即時コマンド実行
         executeCommands(result.commands)
@@ -109,6 +130,28 @@ export function useCaptionObserver(
         const timerId = window.setTimeout(() => {
           activeTimers.delete(segId)
           const commands = engine.finalizeSegment(segId, speaker, text)
+
+          // [debug] finalizeSegment後
+          const appendCmd = commands.find(
+            (c): c is Extract<Command, { type: "appendTranscript" }> =>
+              c.type === "appendTranscript"
+          )
+          const action = appendCmd
+            ? commands.some((c) => c.type === "setHasContent")
+              ? "first"
+              : "append"
+            : commands.some((c) => c.type === "clearInterim")
+              ? "skip"
+              : "unchanged"
+          logger.log({
+            phase: "finalize",
+            segId,
+            speaker,
+            text,
+            delta: appendCmd?.text ?? null,
+            action
+          })
+
           executeCommands(commands)
         }, result.finalizeDelayMs)
 
