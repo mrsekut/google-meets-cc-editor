@@ -25,6 +25,32 @@ describe("computeTextDelta", () => {
     expect(computeTextDelta("hello", "hello world")).toBe("world")
   })
 
+  describe("punctuation replacement + extension", () => {
+    it("finds delta when trailing punctuation was replaced and text extended", () => {
+      // "すごい！" → "すごいリアルで家事しながら。"
+      expect(computeTextDelta("すごい！", "すごいリアルで家事しながら。")).toBe(
+        "リアルで家事しながら。"
+      )
+    })
+
+    it("finds delta when trailing 。was replaced with 、and text extended", () => {
+      // "動物の森と。" → "動物の森と、ブロック系で..."
+      expect(
+        computeTextDelta("動物の森と。", "動物の森と、ブロック系でいろいろ。")
+      ).toBe("ブロック系でいろいろ。")
+    })
+
+    it("finds delta when trailing ！ was removed and text extended", () => {
+      expect(computeTextDelta("そう！", "そうで、私あのアレンジ。")).toBe(
+        "で、私あのアレンジ。"
+      )
+    })
+
+    it("returns null when punctuation changed but no new content", () => {
+      expect(computeTextDelta("はい。", "はい！")).toBeNull()
+    })
+  })
+
   describe("speech recognition revision handling", () => {
     it("finds delta when lastText exists as substring in newText (caption window expansion)", () => {
       const lastText =

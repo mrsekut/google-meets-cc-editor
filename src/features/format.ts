@@ -18,10 +18,23 @@ export function computeTextDelta(
     return delta || null
   }
 
+  // Case 1.5: Trailing punctuation was replaced/removed and text was extended
+  // e.g. "すごい！" → "すごいリアルで家事しながら。"
+  const lastTrimmed = lastText.replace(/[。.！？!?、,]+$/, "")
+  if (lastTrimmed.length > 0 && lastTrimmed !== lastText) {
+    if (newText.startsWith(lastTrimmed)) {
+      const delta = newText
+        .slice(lastTrimmed.length)
+        .replace(/^[。.！？!?、,\s]+/, "")
+        .trim()
+      return delta || null
+    }
+  }
+
   // Case 2: Text was revised by speech recognition (spaces, word endings changed)
   // Try to find lastText's content within newText as a substring
   // Strip trailing punctuation since SR often changes sentence-ending punctuation
-  const searchable = lastText.replace(/[。.！？!?]+$/, "")
+  const searchable = lastTrimmed
   if (searchable.length >= 5) {
     // Try exact substring match first
     const idx = newText.indexOf(searchable)

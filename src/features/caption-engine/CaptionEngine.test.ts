@@ -86,20 +86,42 @@ describe("CaptionEngine", () => {
       expect(result.finalizeDelayMs).toBe(500)
     })
 
-    it("returns 500ms when text ends with ！", () => {
+    it("returns 2500ms for short text ending with ！ on first finalize", () => {
       const engine = new CaptionEngine()
       const result = engine.handleCaptionUpdate("block-1", "Alice", "すごい！")
+      expect(result.finalizeDelayMs).toBe(2500)
+    })
+
+    it("returns 500ms for short text ending with ！ after first finalize", () => {
+      const engine = new CaptionEngine()
+      const r1 = engine.handleCaptionUpdate("block-1", "Alice", "すごい！")
+      engine.finalizeSegment(r1.segmentId, "Alice", "すごい！")
+      const r2 = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "すごい！本当に。"
+      )
+      expect(r2.finalizeDelayMs).toBe(500)
+    })
+
+    it("returns 500ms when text ends with ？ and is long enough", () => {
+      const engine = new CaptionEngine()
+      const result = engine.handleCaptionUpdate(
+        "block-1",
+        "Alice",
+        "本当にそうだと思いますか？"
+      )
       expect(result.finalizeDelayMs).toBe(500)
     })
 
-    it("returns 500ms when text ends with ？", () => {
+    it("returns 2500ms for short text ending with ？ on first finalize", () => {
       const engine = new CaptionEngine()
       const result = engine.handleCaptionUpdate(
         "block-1",
         "Alice",
         "本当ですか？"
       )
-      expect(result.finalizeDelayMs).toBe(500)
+      expect(result.finalizeDelayMs).toBe(2500)
     })
 
     it("uses normal delay even for long text (no immediate finalization)", () => {

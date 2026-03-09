@@ -15,6 +15,7 @@ const FINALIZE_DELAY_MS = 2500
 const PUNCTUATION_DELAY_MS = 500
 
 const PUNCTUATION_RE = /[。.！？!?]$/
+const SHORT_TEXT_THRESHOLD = 10
 
 // --- Command types ---
 
@@ -49,7 +50,7 @@ export class CaptionEngine {
     const lastText = this.finalizedSegments.get(segId)
     const interimText = (lastText && computeTextDelta(lastText, text)) ?? text
 
-    const finalizeDelayMs = this.computeFinalizeDelay(interimText, text)
+    const finalizeDelayMs = this.computeFinalizeDelay(interimText, text, segId)
 
     return {
       commands: [{ type: "setInterim", speaker, text: interimText }],
@@ -108,7 +109,17 @@ export class CaptionEngine {
 
   // --- private ---
 
-  private computeFinalizeDelay(_interimText: string, fullText: string): number {
+  private computeFinalizeDelay(
+    _interimText: string,
+    fullText: string,
+    segId: string
+  ): number {
+    // 初回確定かつ短いテキストは句読点があっても長めに待つ
+    // 音声認識が短い発話を早期に確定→書き換えるパターンを防ぐ
+    const isFirstFinalize = !this.finalizedSegments.has(segId)
+    if (isFirstFinalize && fullText.length < SHORT_TEXT_THRESHOLD) {
+      return FINALIZE_DELAY_MS
+    }
     if (PUNCTUATION_RE.test(fullText)) return PUNCTUATION_DELAY_MS
     return FINALIZE_DELAY_MS
   }
