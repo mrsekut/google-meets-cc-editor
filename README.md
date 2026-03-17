@@ -2,6 +2,8 @@
 
 A Chrome extension that automatically captures Google Meets captions and accumulates them in an editable floating panel.
 
+<video src="https://i.gyazo.com/e65162a2b9a91177517182eabec29991.mp4" controls="true"></video>
+
 ## Features
 
 - Auto-enable captions
