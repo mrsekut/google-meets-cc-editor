@@ -2,7 +2,7 @@
   "name": "google-meets-cc-editor",
   "displayName": "Google meets cc editor",
   "version": "0.0.1",
-  "description": "...",
+  "description": "Captures Google Meet captions into an editable floating panel",
   "author": "mrsekut",
   "scripts": {
     "dev": "plasmo dev",
