@@ -8,6 +8,7 @@ import { logger } from "~features/caption-engine/DebugLogger"
 import type { CaptionData } from "~features/selectors"
 import { TranscriptArea, type TranscriptHandle } from "~features/TranscriptArea"
 import { useCaptionObserver } from "~features/useCaptionObserver"
+import { useMeetingEndSave } from "~features/useMeetingEndSave"
 
 import { InterimDisplay } from "./InterimDisplay"
 import { isMinimizedAtom, MinimizeButton, MinimizeIcon } from "./panel/minimize"
@@ -26,6 +27,7 @@ export function CaptionPanel() {
 
   useAutoCC()
   useCaptionObserver(onAppendSegment, setInterimText)
+  useMeetingEndSave(transcriptRef)
 
   return (
     <>

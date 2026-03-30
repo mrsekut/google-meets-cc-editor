@@ -7,6 +7,7 @@ import { SpeakerColorMap } from "~features/caption-engine/SpeakerColorMap"
 
 export type TranscriptHandle = {
   append: (speaker: string, text: string) => void
+  getText: () => string
 }
 
 export const TranscriptArea = forwardRef<TranscriptHandle>(
@@ -26,6 +27,9 @@ export const TranscriptArea = forwardRef<TranscriptHandle>(
         setHasContent(true)
 
         if (atBottom) el.scrollTop = el.scrollHeight
+      },
+      getText() {
+        return elRef.current?.innerText ?? ""
       }
     }))
 
