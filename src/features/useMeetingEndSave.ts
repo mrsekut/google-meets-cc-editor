@@ -18,6 +18,17 @@ export function useMeetingEndSave(
 ) {
   useEffect(() => {
     let saved = false
+    let meetingTitle = ""
+
+    const titleObserver = new MutationObserver(() => {
+      const extracted = extractMeetingTitle()
+      if (extracted) meetingTitle = extracted
+    })
+    const titleEl = document.querySelector("title")
+    if (titleEl) {
+      titleObserver.observe(titleEl, { childList: true })
+      meetingTitle = extractMeetingTitle()
+    }
 
     const observer = new MutationObserver(() => {
       if (saved) return
@@ -28,7 +39,8 @@ export function useMeetingEndSave(
 
       saved = true
       observer.disconnect()
-      downloadTranscript(text)
+      titleObserver.disconnect()
+      downloadTranscript(text, meetingTitle)
     })
 
     observer.observe(document.body, {
@@ -38,6 +50,7 @@ export function useMeetingEndSave(
 
     return () => {
       observer.disconnect()
+      titleObserver.disconnect()
     }
   }, [])
 }
@@ -46,13 +59,28 @@ function isMeetingEnded(): boolean {
   return MEETING_END_SELECTORS.some((sel) => document.querySelector(sel))
 }
 
-function downloadTranscript(text: string) {
+function extractMeetingTitle(): string {
+  const title = document.title.replace(/^Meet\s*-\s*/, "").trim()
+  return title || ""
+}
+
+function sanitizeFilename(name: string): string {
+  return name
+    .replace(/[/\\:*?"<>|]/g, "_")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function downloadTranscript(text: string, meetingTitle: string) {
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-")
+  const prefix = meetingTitle
+    ? `${sanitizeFilename(meetingTitle)}_`
+    : "meeting-transcript_"
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url
-  a.download = `meeting-transcript-${timestamp}.txt`
+  a.download = `${prefix}${timestamp}.txt`
   a.click()
   URL.revokeObjectURL(url)
   console.log("[Google Meets CC] Transcript saved automatically")
