@@ -56,7 +56,7 @@ export function computeTextDelta(
       let normCount = 0
       let origPos = 0
       while (origPos < newText.length && normCount < normEnd) {
-        if (/\s/.test(newText[origPos])) {
+        if (/\s/.test(newText.charAt(origPos))) {
           origPos++
           continue
         }
