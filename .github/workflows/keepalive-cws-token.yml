@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# Chrome Web Store の refresh token は6ヶ月使わないと失効し、
+# OAuth クライアントも削除対象になる。月1回トークンを使って延命する。
+name: "Keep Chrome Web Store token alive"
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh access token and check API access
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          EXTENSION_ID: bgodplojfdhmhgpkbiimckmkenhfjidn
+        run: |
+          access_token=$(curl -sf https://oauth2.googleapis.com/token \
+            -d client_id="$CLIENT_ID" \
+            -d client_secret="$CLIENT_SECRET" \
+            -d refresh_token="$REFRESH_TOKEN" \
+            -d grant_type=refresh_token | jq -r .access_token)
+          if [ -z "$access_token" ] || [ "$access_token" = "null" ]; then
+            echo "::error::refresh token が無効です。再発行が必要です。"
+            exit 1
+          fi
+          echo "::add-mask::$access_token"
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $access_token" \
+            "https://chromewebstore.googleapis.com/v2/publishers/$PUBLISHER_ID/items/$EXTENSION_ID:fetchStatus")
+          echo "fetchStatus: HTTP $status"
+          [ "$status" = "200" ]
+
+      # public リポジトリでは60日間アクティビティが無いと schedule が自動停止されるため再有効化する
+      - name: Keep this workflow enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/keepalive-cws-token.yml/enable"
